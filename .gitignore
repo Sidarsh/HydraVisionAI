@@ -1,0 +1,8 @@
+Model/processed/
+Model/**/train/
+Model/**/valid/
+*.jpg
+*.png
+*.pt
+*.h5
+*.weights
