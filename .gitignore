@@ -6,3 +6,4 @@ Model/**/valid/
 *.pt
 *.h5
 *.weights
+Model/.env
