@@ -7,6 +7,11 @@ Skin‑wellness chatbot powered by Groq's FREE API (LLaMA 3.3).
 import os
 import requests
 from dotenv import load_dotenv
+import sys
+
+# Ensure rag_utils can be imported
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+from rag_utils import retrieve_context
 
 load_dotenv()
 
@@ -26,7 +31,14 @@ WORKFLOW:
    - If AI says Hydrated and User feels Tight -> Suggest it might be early-stage or internal dehydration.
 5. Provide personalized recommendations (Indian brands: Minimalist, Dot & Key, Plum, etc.) based on this combined insight.
 
-Always maintain a warm, expert tone. Keep responses concise."""
+FORMATTING RULES:
+- Use **bold** for emphasis on key terms.
+- Use bullet points (•) or numbered lists for steps/tips.
+- Use emojis (💧, ✨, 🧴, 🧪) to make the conversation friendly and interactive.
+- Keep responses concise and avoid long paragraphs.
+- Structure your response into clear, readable sections.
+
+Always maintain a warm, expert tone."""
 
 def chat(history, user_message, skin_status=None):
     """
@@ -34,8 +46,13 @@ def chat(history, user_message, skin_status=None):
     user_message: str
     skin_status: dict (optional scan results)
     """
-    if not GROQ_API_KEY:
-        return "⚠️ No Groq API key found. Please set GROQ_API_KEY in your .env file.", history
+    load_dotenv()
+    current_api_key = os.getenv("GROQ_API_KEY", "")
+    
+    updated_history = history + [{"role": "user", "content": user_message}]
+    if not current_api_key:
+        reply = "⚠️ No Groq API key found. Please set GROQ_API_KEY in your .env file."
+        return reply, updated_history + [{"role": "assistant", "content": reply}]
 
     # Inject scan results into system context if available
     context_msgs = [{"role": "system", "content": SYSTEM_PROMPT}]
@@ -46,6 +63,17 @@ def chat(history, user_message, skin_status=None):
             "Please start by asking the user to touch the highlighted areas on the heatmap to confirm how their skin feels."
         )
         context_msgs.append({"role": "system", "content": results_str})
+
+    # --- RAG INTEGRATION ---
+    # Retrieve relevant knowledge base context based on user query
+    rag_context = retrieve_context(user_message)
+    if rag_context:
+        rag_sys_prompt = (
+            "Additional Knowledge Base Context for answering the user:\n"
+            f"{rag_context}\n"
+            "Use this context to inform your response if relevant, but prioritize the user's sensory feedback."
+        )
+        context_msgs.append({"role": "system", "content": rag_sys_prompt})
 
     updated_history = history + [{"role": "user", "content": user_message}]
     
@@ -59,7 +87,7 @@ def chat(history, user_message, skin_status=None):
     try:
         resp = requests.post(
             GROQ_URL,
-            headers={"Authorization": f"Bearer {GROQ_API_KEY}", "Content-Type": "application/json"},
+            headers={"Authorization": f"Bearer {current_api_key}", "Content-Type": "application/json"},
             json=payload,
             timeout=30
         )

@@ -7,3 +7,18 @@ Model/**/valid/
 *.h5
 *.weights
 Model/.env
+# Environment variables
+.env
+.env.*
+
+# Python
+__pycache__/
+*.pyc
+
+# Node (frontend)
+node_modules/
+dist/
+build/
+
+# OS files
+.DS_Store
