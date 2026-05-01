@@ -157,7 +157,7 @@ def predict(pil_image: Image.Image):
         img_arr = np.array(face_pil.resize((IMG_SIZE, IMG_SIZE))).astype("float32")
         img_arr = np.expand_dims(img_arr, axis=0)
         # Apply standard Keras preprocessing (-1 to 1)
-        img_arr = img_arr / 127.5 - 1.0
+        img_arr = img_arr / 255.0 #model was trained using /255.0
             
         preds = _model.predict(img_arr, verbose=0)[0]
         # Diagnostic print
@@ -167,7 +167,7 @@ def predict(pil_image: Image.Image):
         # [Hydrated, Dehydrated]
         probs = preds if len(preds) == 2 else np.array([preds[0], 1-preds[0]])
         global _class_names
-        _class_names = ["hydrated", "dehydrated"]
+        _class_names = ["dehydrated", "hydrated"]
         print(f"DEBUG: Mapped Probs: {probs} for classes {_class_names}")
     else:
         # PyTorch logic
